@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Coverage
+coverage/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Runtime state (cursor file)
+data/
+
+# Personal interview notes (never ship)
+notes/

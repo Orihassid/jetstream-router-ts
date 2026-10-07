@@ -1,0 +1,44 @@
+# Every tunable the service reads. Edit, `kubectl apply -f k8s/`, then
+# `kubectl rollout restart deploy/jetstream-router` to pick up changes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jetstream-router
+data:
+  JETSTREAM_URL: "wss://jetstream2.us-east.bsky.network/subscribe"
+  # Server-side filter: exact names or prefixes like app.bsky.graph.* ; empty = consume everything.
+  # An invalid value makes Jetstream refuse the connection.
+  WANTED_COLLECTIONS: ""
+  LOG_LEVEL: "info"
+  HTTP_PORT: "8080"
+
+  # Resume (decision 5): cursor file on the pod's emptyDir, rewind 5s on reconnect.
+  CURSOR_FILE: "/data/cursor.json"
+  CURSOR_REWIND_MS: "5000"
+  CURSOR_PERSIST_MS: "5000"
+  BACKOFF_INITIAL_MS: "500"
+  BACKOFF_MAX_MS: "30000"
+
+  # Shutdown and readiness.
+  SHUTDOWN_TIMEOUT_MS: "10000"      # must be below terminationGracePeriodSeconds
+  READY_MAX_LAG_MS: "500"           # event-loop lag p99 above this = not ready
+  READY_MAX_IDLE_MS: "30000"        # no event for this long = not ready
+
+  # Routes.
+  POST_KEYWORDS: "bluesky,kubernetes,typescript"
+  POST_LANGS: "he"
+  ENGAGEMENT_THRESHOLD: "25"
+  ENGAGEMENT_WINDOW_MS: "60000"
+  FOLLOW_BURST_THRESHOLD: "3"
+  FOLLOW_BURST_WINDOW_MS: "120000"
+  WINDOW_MAX_KEYS: "50000"
+
+  # Per-route queue depth and worker count (decision 2: depth = acceptable lag × route rate).
+  ROUTE_DELETIONS_QUEUE_SIZE: "2000"
+  ROUTE_DELETIONS_WORKERS: "4"
+  ROUTE_POSTS_QUEUE_SIZE: "2000"
+  ROUTE_POSTS_WORKERS: "4"
+  ROUTE_ENGAGEMENT_QUEUE_SIZE: "10000"
+  ROUTE_ENGAGEMENT_WORKERS: "4"
+  ROUTE_FOLLOWS_QUEUE_SIZE: "1000"
+  ROUTE_FOLLOWS_WORKERS: "2"

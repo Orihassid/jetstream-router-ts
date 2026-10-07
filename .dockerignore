@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+docs
+k8s
+scripts
+.git
+*.md
+**/*.test.ts

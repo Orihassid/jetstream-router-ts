@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jetstream-router
+  labels:
+    app: jetstream-router
+spec:
+  # One WebSocket, one consumer (decision 7). Recreate, not RollingUpdate: the old pod stops
+  # before the new one starts, so two pods never consume at once. The few seconds of gap are
+  # covered by the cursor rewind on startup.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jetstream-router
+  template:
+    metadata:
+      labels:
+        app: jetstream-router
+    spec:
+      # Longer than SHUTDOWN_TIMEOUT_MS so the drain always gets to finish.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: router
+          image: jetstream-router:dev
+          imagePullPolicy: IfNotPresent   # image is loaded into kind, never pulled
+          envFrom:
+            - configMapRef:
+                name: jetstream-router
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          # Ready = connected to Jetstream, consuming, and the event loop is keeping up.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+          # Alive = the process answers HTTP at all.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+      volumes:
+        # Survives a container restart inside the pod, not a pod replacement (decision 5B).
+        - name: data
+          emptyDir: {}

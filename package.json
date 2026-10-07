@@ -1,0 +1,33 @@
+{
+  "name": "jetstream-router-ts",
+  "version": "1.0.0",
+  "description": "Routes the Bluesky Jetstream firehose to independent, type-specific workers (TypeScript, Node, Kubernetes).",
+  "main": "dist/main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "pino": "^10.4.0",
+    "prom-client": "^15.1.3"
+  }
+}
