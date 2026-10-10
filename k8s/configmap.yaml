@@ -33,12 +33,14 @@ data:
   FOLLOW_BURST_WINDOW_MS: "120000"
   WINDOW_MAX_KEYS: "50000"
 
-  # Per-route queue depth and worker count (decision 2: depth = acceptable lag × route rate).
+  # Per-route queue size and worker count.
+  # queue size ≈ arrival rate × seconds a route may stall (about 45 s at the measured average rate)
+  # workers    = busiest-hour rate × handler time, rounded up, minimum 2 (assumes a 50 ms handler)
   ROUTE_DELETIONS_QUEUE_SIZE: "2000"
-  ROUTE_DELETIONS_WORKERS: "4"
+  ROUTE_DELETIONS_WORKERS: "2"
   ROUTE_POSTS_QUEUE_SIZE: "2000"
   ROUTE_POSTS_WORKERS: "4"
   ROUTE_ENGAGEMENT_QUEUE_SIZE: "10000"
-  ROUTE_ENGAGEMENT_WORKERS: "4"
+  ROUTE_ENGAGEMENT_WORKERS: "21"
   ROUTE_FOLLOWS_QUEUE_SIZE: "1000"
   ROUTE_FOLLOWS_WORKERS: "2"

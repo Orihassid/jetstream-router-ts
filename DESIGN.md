@@ -37,6 +37,23 @@ average rate, about half that at peak.
 
 Long enough to absorb a short stall, short enough that an alert is still fresh, at most 10 MB.
 
+**Why these worker counts**
+
+Handlers are in-memory today, so one worker per route would do. I sized the pools for the first
+realistic change: a handler that makes a 50 ms network call, at the busiest hour I measured (about
+1.6 times the average rate).
+
+> workers = busiest-hour rate × handler time, rounded up, minimum 2
+
+- **Engagement:** 411/s × 0.05 s = 20.6 → 21
+- **Posts:** 69/s × 0.05 s = 3.4 → 4
+- **Follows:** 33/s × 0.05 s = 1.6 → 2
+- **Deletions:** 18/s × 0.05 s = 0.9 → 2
+
+The minimum is 2 so that one stuck call cannot stop a whole route. The 50 ms is an assumption.
+Tested with that delay on the live stream: 13 workers, sized from the average rate, fell behind at
+335 events/s. 21 workers kept the queue empty.
+
 A 23× spread between the busiest and the quietest route: any resource they share is taken over by
 likes. Overall rate: 220 to 555 events/s.
 
@@ -139,7 +156,7 @@ is to dedupe by event identity (`did` + collection + `rkey`) in each route.
 | Question | Method | Result |
 |---|---|---|
 | Throughput headroom | Replayed a 20 minute backlog | 5,000 events/s, nine times the busiest hour, under 20% of one core, 0 dropped |
-| Route isolation | 50 ms delay in the engagement handler | Its queue filled in 20 s, then dropped about 100/s. The other routes lost nothing. |
+| Route isolation | 50 ms delay in the engagement handler, with 4 workers and a queue of 2,000 | Its queue filled in 20 s, then dropped about 100/s. The other routes lost nothing. |
 | CPU-bound handler | 5 ms busy loop per like | Event-loop lag went from 2 ms to seconds. The queue stayed empty: a queue does not protect against this. |
 | Slow consumer | Froze the process for 1 and 5 minutes | Jetstream disconnected it. It resumed from the cursor and caught up in under 20 s. |
 | Cursor lookback | Cursors from 15 minutes to 7 days old | 36 hours. Older cursors are silently moved forward. |
@@ -194,7 +211,8 @@ against the live stream.
 - **My first measurement was one minute long.** It showed deletes at 10% because it caught a burst
   of unfollows. Thirty-six hours shows 3%.
 - **I estimated 20 MB for a full counter map.** Measured, it is 40 MB.
-- **The worker counts are starting values, not calculated.** With instant handlers they make no difference yet.
+- **The worker counts were first set by feel.** Deletions, with 3% of the traffic, had as many workers as
+  engagement with 74%. They are now derived from the measured rates and an assumed 50 ms handler.
 - **I wrote that a too-old cursor would be counted as a gap.** I never built that. Today it is silent.
 - **The pod can report ready while minutes behind the stream.** Found only by watching a catch-up.
 - **A silently dead connection is never restarted.** It needs a no-events watchdog.

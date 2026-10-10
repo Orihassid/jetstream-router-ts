@@ -16,7 +16,7 @@ export interface DeletionsDeps {
 export function createDeletionsRoute(deps: DeletionsDeps): Route {
   const log = deps.log.child({ route: "deletions" });
   const deletions = new Counter({ name: "deletions_total", help: "Deletes seen, by collection", labelNames: ["collection"], registers: [deps.registry] });
-  const settings = deps.config.routeSettings("deletions", { queueSize: 2_000, workers: 4 });
+  const settings = deps.config.routeSettings("deletions", { queueSize: 2_000, workers: 2 });
 
   return {
     name: "deletions",

@@ -30,7 +30,7 @@ function subjectUri(record: unknown): string | undefined {
 export function createEngagementRoute(deps: EngagementDeps): Route {
   const log = deps.log.child({ route: "engagement" });
   const { engagementThreshold: threshold, engagementWindowMs: windowMs, windowMaxKeys: maxKeys } = deps.config;
-  const settings = deps.config.routeSettings("engagement", { queueSize: 10_000, workers: 4 });
+  const settings = deps.config.routeSettings("engagement", { queueSize: 10_000, workers: 21 });
   const window = new BurstWindow({ threshold, windowMs, maxKeys });
 
   const alerts = new Counter({ name: "engagement_alerts_total", help: "Subjects that crossed the engagement threshold", registers: [deps.registry] });
