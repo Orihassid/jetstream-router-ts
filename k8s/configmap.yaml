@@ -35,12 +35,14 @@ data:
 
   # Per-route queue size and worker count.
   # queue size ≈ arrival rate × seconds a route may stall (about 45 s at the measured average rate)
-  # workers    = busiest-hour rate × handler time, rounded up, minimum 2 (assumes a 50 ms handler)
+  # workers    = busiest-hour rate × measured handler time, rounded up, plus 1 spare.
+  #              Handlers take microseconds today, so that is 1 + 1 = 2 per route.
+  #              With a 50 ms handler the same formula gives 21 for engagement.
   ROUTE_DELETIONS_QUEUE_SIZE: "2000"
   ROUTE_DELETIONS_WORKERS: "2"
   ROUTE_POSTS_QUEUE_SIZE: "2000"
-  ROUTE_POSTS_WORKERS: "4"
+  ROUTE_POSTS_WORKERS: "2"
   ROUTE_ENGAGEMENT_QUEUE_SIZE: "10000"
-  ROUTE_ENGAGEMENT_WORKERS: "21"
+  ROUTE_ENGAGEMENT_WORKERS: "2"
   ROUTE_FOLLOWS_QUEUE_SIZE: "1000"
   ROUTE_FOLLOWS_WORKERS: "2"

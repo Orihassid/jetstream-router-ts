@@ -42,7 +42,7 @@ export function createPostsRoute(deps: PostsDeps): Route {
   const log = deps.log.child({ route: "posts" });
   const keywords = deps.config.postKeywords;
   const langs = new Set(deps.config.postLangs);
-  const settings = deps.config.routeSettings("posts", { queueSize: 2_000, workers: 4 });
+  const settings = deps.config.routeSettings("posts", { queueSize: 2_000, workers: 2 });
 
   const notifications = new Counter({ name: "post_notifications_total", help: "Post notifications emitted", labelNames: ["reason"], registers: [deps.registry] });
   const unreadable = new Counter({ name: "post_records_unreadable_total", help: "Post creates whose record had no readable fields", registers: [deps.registry] });

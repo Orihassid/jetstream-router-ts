@@ -7,8 +7,9 @@ Sections 1 to 4 are the design. Sections 5 to 9 are the evidence, the risks and 
 One WebSocket carries a mixed, high-volume event stream. Each event must be classified and
 dispatched to type-specific work, and those paths must run, fail and scale independently.
 
-I measured the stream for 36 hours before designing (`scripts/baseline.ts`, 180,000 events). Three
-properties of the source drive the design.
+I measured the stream before designing with a 60 second probe, and later took a baseline: 36
+hourly samples across the server's 36 hours of history (`scripts/baseline.ts`, 180,000 events
+sampled out of roughly 44 million). Three properties of the source drive the design.
 
 **One connection, one reader.** Ingest cannot be parallelised. Anything the reader does inline is
 charged to every event type. In Node the whole process is one thread, which makes this sharper.
@@ -39,20 +40,20 @@ Long enough to absorb a short stall, short enough that an alert is still fresh, 
 
 **Why these worker counts**
 
-Handlers are in-memory today, so one worker per route would do. I sized the pools for the first
-realistic change: a handler that makes a 50 ms network call, at the busiest hour I measured (about
-1.6 times the average rate).
+Measured on the live stream, a handler takes 7 to 33 microseconds. Even at the busiest hour that
+keeps one worker busy less than 1% of the time. So each route needs one worker, and I run two: the
+one that is needed and one spare, so a single stuck call cannot stop a route.
 
-> workers = busiest-hour rate × handler time, rounded up, minimum 2
+> workers = busiest-hour rate × handler time, rounded up, plus 1 spare
 
-- **Engagement:** 411/s × 0.05 s = 20.6 → 21
-- **Posts:** 69/s × 0.05 s = 3.4 → 4
-- **Follows:** 33/s × 0.05 s = 1.6 → 2
-- **Deletions:** 18/s × 0.05 s = 0.9 → 2
+- **Engagement:** 411/s × 7 µs = 0.003 → 1, plus 1 spare = 2
+- **Posts:** 69/s × 33 µs = 0.002 → 1, plus 1 spare = 2
+- **Follows:** 33/s × 13 µs = 0.0004 → 1, plus 1 spare = 2
+- **Deletions:** 18/s × 15 µs = 0.0003 → 1, plus 1 spare = 2
 
-The minimum is 2 so that one stuck call cannot stop a whole route. The 50 ms is an assumption.
-Tested with that delay on the live stream: 13 workers, sized from the average rate, fell behind at
-335 events/s. 21 workers kept the queue empty.
+The same formula says when to add more. If a handler starts making a 50 ms network call, engagement
+needs 411 × 0.05 = 21. Tested with that delay on the live stream: 13 workers fell behind at 335
+events/s, and 21 kept the queue empty. It is a setting.
 
 A 23× spread between the busiest and the quietest route: any resource they share is taken over by
 likes. Overall rate: 220 to 555 events/s.
@@ -212,7 +213,7 @@ against the live stream.
   of unfollows. Thirty-six hours shows 3%.
 - **I estimated 20 MB for a full counter map.** Measured, it is 40 MB.
 - **The worker counts were first set by feel.** Deletions, with 3% of the traffic, had as many workers as
-  engagement with 74%. They are now derived from the measured rates and an assumed 50 ms handler.
+  engagement with 74%. They are now derived from the measured rates and the measured handler time.
 - **I wrote that a too-old cursor would be counted as a gap.** I never built that. Today it is silent.
 - **The pod can report ready while minutes behind the stream.** Found only by watching a catch-up.
 - **A silently dead connection is never restarted.** It needs a no-events watchdog.
